@@ -25,6 +25,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [activeEvent, setActiveEvent] = useState(null);
+  const [sessionName, setSessionName] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [signinOpen, setSigninOpen] = useState(false);
+  const [signinName, setSigninName] = useState("");
+  const [signinSubmitting, setSigninSubmitting] = useState(false);
+  const [signinError, setSigninError] = useState("");
+  const [signinRetryAt, setSigninRetryAt] = useState(null);
   const [name, setName] = useState("");
   const [seats, setSeats] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -49,12 +56,70 @@ export default function HomePage() {
     loadEvents();
   }, [loadEvents]);
 
+  useEffect(() => {
+    fetch("/api/session", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Sign-in status could not be checked.");
+        return response.json();
+      })
+      .then((session) => {
+        setSessionName(session.signedInName);
+        setSigninRetryAt(session.lockedUntil);
+      })
+      .catch(() => {
+        setSigninError("We couldn’t check your sign-in status. Please try again.");
+      })
+      .finally(() => setSessionChecked(true));
+  }, []);
+
   function openAction(event) {
     setActiveEvent(event);
-    setName("");
+    setName(sessionName || "");
     setSeats(1);
     setMessage("");
     setActionError("");
+  }
+
+  async function submitSignIn(event) {
+    event.preventDefault();
+    if (signinSubmitting) return;
+
+    setSigninSubmitting(true);
+    setSigninError("");
+    try {
+      const response = await fetch("/api/signin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: signinName }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setSigninRetryAt(result.retryAt || null);
+        throw new Error(result.error || "We couldn’t sign you in.");
+      }
+
+      setSessionName(result.signedInName);
+      setSigninRetryAt(null);
+      setSigninOpen(false);
+      setSigninName("");
+      setMessage(`You’re signed in as ${result.signedInName}.`);
+    } catch (error) {
+      setSigninError(error.message);
+    } finally {
+      setSigninSubmitting(false);
+    }
+  }
+
+  async function signOut() {
+    setSigninError("");
+    try {
+      const response = await fetch("/api/signout", { method: "POST" });
+      if (!response.ok) throw new Error("We couldn’t sign you out. Please try again.");
+      setSessionName(null);
+      setMessage("You’re signed out on this browser.");
+    } catch (error) {
+      setSigninError(error.message);
+    }
   }
 
   async function submitAction(event) {
@@ -106,7 +171,26 @@ export default function HomePage() {
           <span className="brand-mark" aria-hidden="true">TT</span>
           <span>Tartan Tickets</span>
         </a>
-        <span className="header-note">Made for campus, by campus</span>
+        <div className="header-actions">
+          {sessionName ? (
+            <>
+              <span className="signed-in-name">Hi, {sessionName}</span>
+              <button className="header-button" onClick={signOut}>Sign out</button>
+            </>
+          ) : (
+            <button
+              className="header-button"
+              onClick={() => {
+                setSigninError("");
+                setSigninOpen(true);
+              }}
+              disabled={!sessionChecked}
+            >
+              Sign in
+            </button>
+          )}
+          <span className="header-note">Made for campus, by campus</span>
+        </div>
       </header>
 
       <section className="hero" aria-labelledby="page-title">
@@ -260,6 +344,57 @@ export default function HomePage() {
                   : activeEvent.seatsRemaining === 0
                     ? "Join waitlist"
                     : "Simulated payment"}
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {signinOpen && (
+        <div className="dialog-backdrop" onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !signinSubmitting) setSigninOpen(false);
+        }}>
+          <section
+            className="action-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signin-title"
+          >
+            <button
+              className="dialog-close"
+              aria-label="Close"
+              onClick={() => setSigninOpen(false)}
+              disabled={signinSubmitting}
+            >
+              ×
+            </button>
+            <p className="eyebrow">WELCOME TO THE CROWD</p>
+            <h2 id="signin-title">Make yourself at home.</h2>
+            <p className="dialog-detail">
+              This class demo uses a name instead of university sign-in.
+            </p>
+            <form onSubmit={submitSignIn}>
+              <label htmlFor="signin-name">Your name</label>
+              <input
+                id="signin-name"
+                name="name"
+                autoComplete="name"
+                value={signinName}
+                onChange={(event) => setSigninName(event.target.value)}
+                placeholder="What should we call you?"
+              />
+              {signinRetryAt && (
+                <p className="form-error" role="status">
+                  Sign-in is locked on this browser until{" "}
+                  {new Date(signinRetryAt).toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}.
+                </p>
+              )}
+              {signinError && <p className="form-error" role="alert">{signinError}</p>}
+              <button className="dialog-submit" type="submit" disabled={signinSubmitting}>
+                {signinSubmitting ? "One moment…" : "Sign in with name"}
               </button>
             </form>
           </section>

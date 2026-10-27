@@ -87,6 +87,39 @@ select:focus-visible {
   letter-spacing: 0.08em;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.signed-in-name {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.header-button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.header-button:hover:not(:disabled) {
+  background: var(--ink);
+  color: white;
+}
+
+.header-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .header-note {
   color: var(--ink-soft);
   font-size: 10px;
@@ -567,6 +600,23 @@ select:focus-visible {
     max-width: 105px;
     font-size: 8px;
     text-align: right;
+  }
+
+  .header-actions {
+    gap: 9px;
+  }
+
+  .signed-in-name {
+    max-width: 90px;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-button {
+    min-height: 33px;
+    padding: 0 9px;
   }
 
   .hero {

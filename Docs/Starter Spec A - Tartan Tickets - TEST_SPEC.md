@@ -11,6 +11,17 @@ Every requirement in `requirements.md` and `SECURITY_SPEC.md` maps to at least o
 | 1 | `Story 1: sold-out events offer a waitlist instead of buying` | Unit | Sold-out listings offer the waitlist action rather than a buy action. |
 | 1 | `Story 1: events with remaining seats offer buying` | Unit | Events with remaining inventory offer the buy action. |
 
+## Story 2: Sign in (HW3 name-only demo)
+
+| Story | Test name | Type | What it proves |
+|-------|-----------|------|----------------|
+| 2 | `Story 2: a non-empty name signs in on this browser` | Unit | A typed name signs in without a third-party identity provider. |
+| 2 | `Story 2: the fifth failed attempt within ten minutes locks this browser for 15 minutes` | Unit | The fifth blank-name attempt in a rolling 10-minute window starts a 15-minute browser lockout. |
+| 2 | `Story 2: attempts older than ten minutes do not count toward lockout` | Unit | Failed attempts outside the rolling window no longer contribute to the threshold. |
+| 2 | `Story 2: successful sign-in clears recorded failures` | Unit | A successful name entry resets the browser's failure count. |
+| 2 | `Story 2: lockout for one browser does not affect another browser` | Unit | Failure tracking and lockout are separate per browser/device. |
+| 2 | `Story 2: the browser can try again after the 15-minute lockout` | Unit | Sign-in is available again when the lockout period ends. |
+
 ## Functional requirements
 
 | Req | Test name | Type | What it proves |
